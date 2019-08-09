@@ -34,15 +34,48 @@ double DecayGenerator::p(double t_){ return sqrt(t_*(t_+2) ); }
 double DecayGenerator::beta(double t_){ return (p(t_)/(t_ +1)); } 
 
 double DecayGenerator::F(double t_){return F(t_, Z_d);}
-
+// This is a Fermi function that 
 double DecayGenerator::F(double t_, int z_){ 
-    long double s = sqrt(1.0 - pow((alpha*Z_d),2));
-    long double u = alpha*Z_d*(t_ +1)/p(t_); 
-    
-    //std::cout<<"s = "<<s<<std::endl;
-    //std::cout<<"u = "<<u<<std::endl;
-    gsl_sf_result *lnf = new gsl_sf_result ; 
-    long double result = (pow(p(t_), 2*s -u )*
-                     exp(M_PI*u)  );
-    return double(result);
+    double s = sqrt(1.0 - pow((alpha*Z_d),2));
+    double u = alpha*Z_d*(t_ +1)/p(t_); 
+    gsl_sf_result lnf, arg; 
+    int k = gsl_sf_lngamma_complex_e(s, u, &lnf, &arg); 
+    double result = (pow(p(t_), 2*s -2 )*
+                     exp(M_PI*u + 2.0*lnf.val)  );
+    return result;
 }
+// 
+double DecayGenerator::rho_MM(double T1, double costheta){
+    double t1 = T1 / m_e;
+    double t2 = (Q - T1) / m_e;
+    return ( (t1 + 1.0)*p(t1) * 
+             (t2 + 1.0)*p(t2) * 
+             F(t1) * F(t2) * 
+             (1 - beta(t1)*beta(t2)*costheta) 
+           );
+    }
+// 
+double DecayGenerator::rho_RHC(double T1, double costheta){
+    double t1 = T1 / m_e;
+    double t2 = (Q - T1) / m_e;
+    return ( (t1 + 1.0)*p(t1) * 
+             (t2 + 1.0)*p(t2) * 
+             F(t1) * F(t2) * 
+             pow(t2 - t1, 2) *
+             (1 + beta(t1)*beta(t2)*costheta) 
+           );
+    }
+// 
+double DecayGenerator::rho_2vbb(double T1, double T2, double costheta){
+    if ( (Q - T1 - T2) < 0.0  ){return 0.0;} 
+    double t1 = T1 / m_e ; 
+    double t2 = T2 / m_e ; 
+    
+    return ( (t1 + 1.0)*p(t1) * 
+             (t2 + 1.0)*p(t2) * 
+             F(t1) * F(t2) * 
+             pow( (Q / m_e - t1 - t2), 5)*
+             (1 - beta(t1)*beta(t2)*costheta) 
+           );
+    }
+

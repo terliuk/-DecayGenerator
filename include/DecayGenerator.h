@@ -25,6 +25,10 @@ class DecayGenerator{
         double beta(double);      
         double F(double);      
         double F(double, int);    
+        //
+        double rho_MM(double, double);
+        double rho_RHC(double, double); 
+        double rho_2vbb(double, double, double); 
             
     private:
         std::string model; // Model: MM, RHC, 2vbb etc. 
