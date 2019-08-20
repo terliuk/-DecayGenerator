@@ -2,16 +2,35 @@
 
 DecayGenerator::DecayGenerator(   std::string model_, // model name, e.g. MM 
                                   int zdaughter_,  // Z of the daughter, 56 for Xe->Ba decay
-                                  double q_  // Q value of the decay
-                                ){
+                                  double q_, 
+                                  uint64_t seed  // Q value of the decay
+                                ){initialize(model_,zdaughter_,q_,seed);}
+
+//DecayGenerator::DecayGenerator(std::string model_){initialize(model_,56,2457.8,5489u);}
+
+/// Initialization function 
+void DecayGenerator::initialize(std::string model_, 
+                                  int zdaughter_,
+                                  double q_, 
+                                  uint64_t seed ){
     m_e = 510.998;  // keV
     alpha = 1.0/137.036; 
     setModel(model_);
     setZdaughter(zdaughter_);
     setQ(q_);
+    rng = std::mt19937_64(seed);
+    unif = std::uniform_real_distribution<double>(0.0, 1.0);
 }
 
-void DecayGenerator::setModel(std::string m){model = m; }
+void DecayGenerator::setModel(std::string m){
+    model = m; 
+    
+    if (model==std::string("MM") ){         maxval = 1515.0; } 
+    else if (model==std::string("RHC") ){ maxval = 9950.0;} 
+    else if (model==std::string("2vbb") ) { maxval = 48600; }
+    else{maxval = -1.0;}
+    assert (("Cannot find decay model" ,maxval > 0.0) ) ;
+}
 std::string DecayGenerator::getModel(){return model; }
 
 void DecayGenerator::printModel(){
@@ -19,6 +38,7 @@ void DecayGenerator::printModel(){
     std::cout<<"Current model : "<<model<<std::endl;
     std::cout<<"Daughter Z    : "<<Z_d<<std::endl; 
     std::cout<<"Q value       : "<<Q<<" keV"<<std::endl;
+    std::cout<<"Max rho val   : "<<maxval<<std::endl;
     std::cout<<"============================= "<<std::endl;
 }
 
@@ -28,6 +48,8 @@ int DecayGenerator::getZdaughter(){return Z_d;}
 void DecayGenerator::setQ(double q_){ Q = q_;}
 double DecayGenerator::getQ(){return Q;}
 
+void DecayGenerator::setMax(double mv_){ maxval = mv_;}
+double DecayGenerator::getMax(){return maxval;}
 // momentum of electron in units of electron mass
 double DecayGenerator::p(double t_){ return sqrt(t_*(t_+2) ); } 
 // speed of the electron in units of c
@@ -79,3 +101,32 @@ double DecayGenerator::rho_2vbb(double T1, double T2, double costheta){
            );
     }
 
+void DecayGenerator::GenerateEvents(int nevents, 
+                                    double* T1s, 
+                                    double* T2s, 
+                                    double* costhetas){
+    for (int i =0; i < nevents; i++){
+        double t1_ , t2_, cth_; 
+        std::tie(t1_,t2_, cth_) = GenerateOneEvent();
+        T1s[i] = t1_;
+        T2s[i] = t2_; 
+        costhetas[i] = cth_;
+    }    
+    return;
+}
+
+std::tuple<double,double,double> DecayGenerator::GenerateOneEvent(){
+    while (true){ 
+        double t1 = unif(rng)*Q;
+        double t2 = (model == std::string("2vbb") ) ? unif(rng)*Q : t2 = Q - t1;
+        double cth = (-1 + 2*unif(rng));
+        double check = unif(rng)*maxval;
+        double fval = -1;
+        if (model==std::string("MM") )        {  fval = rho_MM(t1, cth);      } 
+        else if (model==std::string("RHC") )  {  fval = rho_RHC(t1, cth);     } 
+        else if (model==std::string("2vbb") ) {  fval = rho_2vbb(t1,t2, cth); }
+        assert(( "rho value has wrong value, are you using a defined decay model? "&& fval > 0)) ; 
+        assert( ( "Rho value is larger than maximally allowed. You can use setMaximum() function, but this is strange" && fval < maxval ));
+        if (check < fval ){ return std::make_tuple(t1,t2,cth);} 
+    }
+}
