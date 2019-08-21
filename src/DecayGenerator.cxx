@@ -56,10 +56,11 @@ double DecayGenerator::p(double t_){ return sqrt(t_*(t_+2) ); }
 double DecayGenerator::beta(double t_){ return (p(t_)/(t_ +1)); } 
 
 double DecayGenerator::F(double t_){return F(t_, Z_d);}
+
 // This is a Fermi function that 
 double DecayGenerator::F(double t_, int z_){ 
-    double s = sqrt(1.0 - pow((alpha*Z_d),2));
-    double u = alpha*Z_d*(t_ +1)/p(t_); 
+    double s = sqrt(1.0 - pow((alpha*z_),2));
+    double u = alpha*z_*(t_ +1)/p(t_); 
     gsl_sf_result lnf, arg; 
     int k = gsl_sf_lngamma_complex_e(s, u, &lnf, &arg); 
     double result = (pow(p(t_), 2*s -2 )*
@@ -100,6 +101,7 @@ double DecayGenerator::rho_2vbb(double T1, double T2, double costheta){
              (1 - beta(t1)*beta(t2)*costheta) 
            );
     }
+//
 
 void DecayGenerator::GenerateEvents(int nevents, 
                                     double* T1s, 
@@ -114,9 +116,9 @@ void DecayGenerator::GenerateEvents(int nevents,
     }    
     return;
 }
-
+//
 std::tuple<double,double,double> DecayGenerator::GenerateOneEvent(){
-    while (true){ 
+    while (true){  // XXX: what about adding a safeguard against infinite loops? 
         double t1 = unif(rng)*Q;
         double t2 = (model == std::string("2vbb") ) ? unif(rng)*Q : t2 = Q - t1;
         double cth = (-1 + 2*unif(rng));
@@ -130,3 +132,17 @@ std::tuple<double,double,double> DecayGenerator::GenerateOneEvent(){
         if (check < fval ){ return std::make_tuple(t1,t2,cth);} 
     }
 }
+//
+boost::python::tuple DecayGenerator::GenerateOneEventPy(){
+    double t1_ , t2_, cth_; 
+    std::tie(t1_,t2_, cth_) = GenerateOneEvent();
+    return boost::python::make_tuple(t1_,t2_, cth_);
+}
+//
+/*
+boost::python::numpy::ndarray DecayGenerator::GenerateEventsPy(int nev){
+    namespace p = boost::python;
+    namespace np = boost::python::numpy;
+
+    return np::zeros(p::make_tuple(3,1), np::dtype::get_builtin<float>());
+}*/

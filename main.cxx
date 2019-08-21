@@ -12,17 +12,17 @@ int main (int argc, char *argv[])
   DecayGenerator *gen = new DecayGenerator(std::string(m));
   gen->printModel();
     
-  int nev = 50; 
+  int nev = 10; 
   double T1[nev], T2[nev], costhetas[nev];
   gen->GenerateEvents(nev, T1, T2, costhetas);
-
+  /*
   for(int i=0 ; i<nev; i++){
     std::cout<< i<<std::endl;
     std::cout << "T1 = " << T1[i] << std::endl;
     std::cout << "T2 = " << T2[i] << std::endl;
     std::cout << "CT = " << costhetas[i] << std::endl;
     std::cout << T1[i] + T2[i] << std::endl;
-  }
+  }*/
   return 0;
 }
 
