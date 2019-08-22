@@ -24,13 +24,9 @@ void DecayGenerator::initialize(std::string model_,
     unif = std::uniform_real_distribution<double>(0.0, 1.0);
 }
 // Setter and getter for decay model
-void DecayGenerator::setModel(std::string m){
-    model = m; 
-    
-    if (model==std::string("MM") ){         maxval = 1515.0; } 
-    else if (model==std::string("RHC") ){ maxval = 9950.0;} 
-    else if (model==std::string("2vbb") ) { maxval = 48600; }
-    else{maxval = -1.0;}
+void DecayGenerator::setModel(std::string m){    
+    model = m;
+    maxval = findMax(m);
     assert (("Cannot find decay model" ,maxval > 0.0) ) ;
 }
 std::string DecayGenerator::getModel(){return model; }
@@ -50,6 +46,14 @@ int DecayGenerator::getZdaughter(){return Z_d;}
 void DecayGenerator::setQ(double q_){ Q = q_;}
 double DecayGenerator::getQ(){return Q;}
 // Setter and getter for manual change of maximal value of rho
+
+double DecayGenerator::findMax(std::string mod){
+    double mval = -1;
+    if (mod==std::string("MM") ){mval = 1515.0; } 
+    else if (mod==std::string("RHC") ){mval = 9950.0;} 
+    else if (mod==std::string("2vbb") ) {mval = 48600; }
+    else{mval = -1.0;}
+    return mval ; } 
 void DecayGenerator::setMax(double mv_){ maxval = mv_;}
 double DecayGenerator::getMax(){return maxval;}
 // momentum of electron in units of electron mass
@@ -190,6 +194,15 @@ std::tuple<double,double,double> DecayGenerator::GenerateOneEvent(){
         if (model==std::string("MM") )        {  fval = rho_MM(t1, cth);      } 
         else if (model==std::string("RHC") )  {  fval = rho_RHC(t1, cth);     } 
         else if (model==std::string("2vbb") ) {  fval = rho_2vbb(t1,t2, cth); }
+        if (fval < 0.0){
+            std::cout << "Rho has wrong value for the following parameters: "<<std::endl ;
+            std::cout << "Model : " <<model <<std::endl;
+            std::cout << "T1  = " << t1 << std::endl;
+            std::cout << "T2  = " << t2 << std::endl;
+            std::cout << "cos = " << cth << std::endl;
+            std::cout << "rho = " << fval << std::endl;
+
+        }
         assert(( "rho value has wrong value, are you using a defined decay model? "&& fval >= 0.0)) ; 
         assert( ( "Rho value is larger than maximally allowed. You can use setMaximum() function, but this is strange" && fval < maxval ));
         if (check < fval ){ return std::make_tuple(t1,t2,cth);} 
@@ -204,17 +217,16 @@ boost::python::tuple DecayGenerator::GenerateOneEventPy(){
 //
 
 boost::python::numpy::ndarray DecayGenerator::GenerateEventsPy(int nev){
-
+    if (nev > 100000){std::cout<<"Warning! Requesting over 1e5 events at once! Memory limitations are possible. Consider to split the call in multiple attempts!"<<std::endl; }
     double events_c[nev][3];
-
     for(int i=0; i < nev ; i++){
         std::tie(events_c[i][0], events_c[i][1], events_c[i][2]) = GenerateOneEvent();
-        //std::cout<<i<<"\t"<<events_c[i][0]<<"\t"<<events_c[i][1]<<"\t"<<events_c[i][2]<<std::endl;
     }
+    //for(int i=0; i < nev ; i++){ std::cout<<i<<"\t"<<events_c[i][0]<<"\t"<<events_c[i][1]<<"\t"<<events_c[i][2]<<std::endl;}
     np::ndarray events = np::from_data(events_c,
                                     np::dtype::get_builtin<double>(), 
                                     p::make_tuple(nev,3), // shape is N x 3
                                     p::make_tuple(3*sizeof(double),1*sizeof(double)), //stride, each of new row is 3 x 1
-                                    p::object()); 
+                                    p::object()).copy(); 
     return events.copy();
 }

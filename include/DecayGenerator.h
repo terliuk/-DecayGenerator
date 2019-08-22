@@ -41,6 +41,7 @@ class DecayGenerator{
         //
         void setMax(double);
         double getMax(); 
+        double findMax(std::string); 
         //
         double p(double);
         double beta(double);      
@@ -91,6 +92,7 @@ BOOST_PYTHON_MODULE(libDecayGenerator)
       .def("getQ",  &DecayGenerator::getQ)
       .def("setMax",  &DecayGenerator::setMax)
       .def("getMax",  &DecayGenerator::getMax)
+      .def("findMax",  &DecayGenerator::findMax)
       .def("p", &DecayGenerator::p)
       .def("beta", &DecayGenerator::beta)
       .def<double (DecayGenerator::*)(double)>("F",&DecayGenerator::F)
