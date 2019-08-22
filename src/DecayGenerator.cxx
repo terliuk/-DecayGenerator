@@ -1,5 +1,7 @@
 #include "DecayGenerator.h"
 
+namespace p = boost::python;
+namespace np = boost::python::numpy;
 DecayGenerator::DecayGenerator(   std::string model_, // model name, e.g. MM 
                                   int zdaughter_,  // Z of the daughter, 56 for Xe->Ba decay
                                   double q_, 
@@ -21,7 +23,7 @@ void DecayGenerator::initialize(std::string model_,
     rng = std::mt19937_64(seed);
     unif = std::uniform_real_distribution<double>(0.0, 1.0);
 }
-
+// Setter and getter for decay model
 void DecayGenerator::setModel(std::string m){
     model = m; 
     
@@ -32,7 +34,7 @@ void DecayGenerator::setModel(std::string m){
     assert (("Cannot find decay model" ,maxval > 0.0) ) ;
 }
 std::string DecayGenerator::getModel(){return model; }
-
+// Summary information
 void DecayGenerator::printModel(){
     std::cout<<"=== Generating decay mode === "<<std::endl;
     std::cout<<"Current model : "<<model<<std::endl;
@@ -41,13 +43,13 @@ void DecayGenerator::printModel(){
     std::cout<<"Max rho val   : "<<maxval<<std::endl;
     std::cout<<"============================= "<<std::endl;
 }
-
+// Setter and getter for daughter Z
 void DecayGenerator::setZdaughter(int z_){ Z_d = z_;}
 int DecayGenerator::getZdaughter(){return Z_d;}
-
+// Setter and getter for daughter Q value
 void DecayGenerator::setQ(double q_){ Q = q_;}
 double DecayGenerator::getQ(){return Q;}
-
+// Setter and getter for manual change of maximal value of rho
 void DecayGenerator::setMax(double mv_){ maxval = mv_;}
 double DecayGenerator::getMax(){return maxval;}
 // momentum of electron in units of electron mass
@@ -59,6 +61,7 @@ double DecayGenerator::F(double t_){return F(t_, Z_d);}
 
 // This is a Fermi function that 
 double DecayGenerator::F(double t_, int z_){ 
+    if(t_ == 0.0) { t_= 1e-20;} // safeguard to avoid nans
     double s = sqrt(1.0 - pow((alpha*z_),2));
     double u = alpha*z_*(t_ +1)/p(t_); 
     gsl_sf_result lnf, arg; 
@@ -67,8 +70,10 @@ double DecayGenerator::F(double t_, int z_){
                      exp(M_PI*u + 2.0*lnf.val)  );
     return result;
 }
-// 
+// Probability distribution for 
 double DecayGenerator::rho_MM(double T1, double costheta){
+    if (T1 > Q) return 0.0;
+    assert(abs(costheta) <= 1.0 );
     double t1 = T1 / m_e;
     double t2 = (Q - T1) / m_e;
     return ( (t1 + 1.0)*p(t1) * 
@@ -78,7 +83,28 @@ double DecayGenerator::rho_MM(double T1, double costheta){
            );
     }
 // 
+boost::python::numpy::ndarray  DecayGenerator::rho_MM(boost::python::numpy::ndarray T1, 
+                                                      boost::python::numpy::ndarray costhetas){
+        int size = T1.get_shape()[0];
+        double result[size];
+        
+        assert( "Arrays must be the same size" && T1.get_shape()[0]==costhetas.get_shape()[0]);
+        
+        for (int i =0; i < size; i++){
+            result[i] = rho_MM(boost::python::extract<double>(T1[i]), 
+                               boost::python::extract<double>(costhetas[i]) ) ;
+        }
+        return np::from_data(result, 
+                             np::dtype::get_builtin<double>(),
+                             p::make_tuple(size), 
+                             p::make_tuple(sizeof(double)), 
+                             p::object() ).copy();
+    }
+// 
+
+
 double DecayGenerator::rho_RHC(double T1, double costheta){
+    if (T1 > Q) return 0.0;
     double t1 = T1 / m_e;
     double t2 = (Q - T1) / m_e;
     return ( (t1 + 1.0)*p(t1) * 
@@ -88,6 +114,24 @@ double DecayGenerator::rho_RHC(double T1, double costheta){
              (1 + beta(t1)*beta(t2)*costheta) 
            );
     }
+boost::python::numpy::ndarray  DecayGenerator::rho_RHC(boost::python::numpy::ndarray T1, 
+                                                      boost::python::numpy::ndarray costhetas){
+        int size = T1.get_shape()[0];
+        double result[size];
+        
+        assert( "Arrays must be the same size" && T1.get_shape()[0]==costhetas.get_shape()[0]);
+        
+        for (int i =0; i < size; i++){
+            result[i] = rho_RHC(boost::python::extract<double>(T1[i]), 
+                                boost::python::extract<double>(costhetas[i]) ) ;
+        }
+        return np::from_data(result, 
+                             np::dtype::get_builtin<double>(),
+                             p::make_tuple(size), 
+                             p::make_tuple(sizeof(double)), 
+                             p::object() ).copy();
+    }
+// 
 // 
 double DecayGenerator::rho_2vbb(double T1, double T2, double costheta){
     if ( (Q - T1 - T2) < 0.0  ){return 0.0;} 
@@ -102,7 +146,26 @@ double DecayGenerator::rho_2vbb(double T1, double T2, double costheta){
            );
     }
 //
+boost::python::numpy::ndarray  DecayGenerator::rho_2vbb(boost::python::numpy::ndarray T1, 
+                                                       boost::python::numpy::ndarray T2, 
+                                                       boost::python::numpy::ndarray costhetas){
+        int size = T1.get_shape()[0];
+        assert( "Arrays must be the same size" && T1.get_shape()[0]==costhetas.get_shape()[0] && T1.get_shape()[0]==T2.get_shape()[0] );
+        double result[size];
+        for (int i =0; i < size; i++){
+            result[i] = rho_2vbb(boost::python::extract<double>(T1[i]), 
+                                 boost::python::extract<double>(T2[i]), 
+                                 boost::python::extract<double>(costhetas[i]) ) ;
+        }
+        return np::from_data(result, 
+                             np::dtype::get_builtin<double>(),
+                             p::make_tuple(size), 
+                             p::make_tuple(sizeof(double)), 
+                             p::object() ).copy();
+}
 
+
+//
 void DecayGenerator::GenerateEvents(int nevents, 
                                     double* T1s, 
                                     double* T2s, 
@@ -141,13 +204,12 @@ boost::python::tuple DecayGenerator::GenerateOneEventPy(){
 //
 
 boost::python::numpy::ndarray DecayGenerator::GenerateEventsPy(int nev){
-    namespace p = boost::python;
-    namespace np = boost::python::numpy;
+
     double events_c[nev][3];
 
     for(int i=0; i < nev ; i++){
         std::tie(events_c[i][0], events_c[i][1], events_c[i][2]) = GenerateOneEvent();
-        std::cout<<i<<"\t"<<events_c[i][0]<<"\t"<<events_c[i][1]<<"\t"<<events_c[i][2]<<std::endl;
+        //std::cout<<i<<"\t"<<events_c[i][0]<<"\t"<<events_c[i][1]<<"\t"<<events_c[i][2]<<std::endl;
     }
     np::ndarray events = np::from_data(events_c,
                                     np::dtype::get_builtin<double>(), 

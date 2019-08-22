@@ -48,8 +48,16 @@ class DecayGenerator{
         double F(double, int);    
         //
         double rho_MM(double, double);
+        boost::python::numpy::ndarray rho_MM(boost::python::numpy::ndarray,
+                                             boost::python::numpy::ndarray);
         double rho_RHC(double, double); 
+        boost::python::numpy::ndarray rho_RHC(boost::python::numpy::ndarray,
+                                             boost::python::numpy::ndarray);
+
         double rho_2vbb(double, double, double); 
+        boost::python::numpy::ndarray rho_2vbb(boost::python::numpy::ndarray,
+                                               boost::python::numpy::ndarray,
+                                               boost::python::numpy::ndarray);
         void GenerateEvents(int, double*, double*, double*);
         std::tuple<double,double,double> GenerateOneEvent();   
         boost::python::tuple GenerateOneEventPy(); 
@@ -87,9 +95,16 @@ BOOST_PYTHON_MODULE(libDecayGenerator)
       .def("beta", &DecayGenerator::beta)
       .def<double (DecayGenerator::*)(double)>("F",&DecayGenerator::F)
       .def<double (DecayGenerator::*)(double,int)>("F",&DecayGenerator::F)
-      .def("rho_MM",&DecayGenerator::rho_MM)
-      .def("rho_RHC",&DecayGenerator::rho_RHC)
-      .def("rho_2vbb",&DecayGenerator::rho_2vbb)
+      .def<double (DecayGenerator::*)(double,double)>("rho_MM",&DecayGenerator::rho_MM)
+      .def<boost::python::numpy::ndarray (DecayGenerator::*)(boost::python::numpy::ndarray,
+                                                             boost::python::numpy::ndarray)>("rho_MM",&DecayGenerator::rho_MM)
+      .def<double (DecayGenerator::*)(double,double)>("rho_RHC",&DecayGenerator::rho_RHC)
+      .def<boost::python::numpy::ndarray (DecayGenerator::*)(boost::python::numpy::ndarray,
+                                                             boost::python::numpy::ndarray)>("rho_RHC",&DecayGenerator::rho_RHC)
+      .def<double (DecayGenerator::*)(double,double,double)>("rho_2vbb",&DecayGenerator::rho_2vbb)
+      .def<boost::python::numpy::ndarray (DecayGenerator::*)(boost::python::numpy::ndarray,
+                                                             boost::python::numpy::ndarray,
+                                                             boost::python::numpy::ndarray)>("rho_2vbb",&DecayGenerator::rho_2vbb)
       .def("GenerateOneEvent", &DecayGenerator::GenerateOneEventPy)
       .def("GenerateEvents", &DecayGenerator::GenerateEventsPy)
     ;
