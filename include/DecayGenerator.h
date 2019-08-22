@@ -17,6 +17,8 @@
 #include <boost/python/tuple.hpp>
 #include <boost/python/numpy.hpp>
 #include <boost/python/numpy/ndarray.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include "boost/multi_array.hpp"
 
 class DecayGenerator{
     
@@ -51,7 +53,7 @@ class DecayGenerator{
         void GenerateEvents(int, double*, double*, double*);
         std::tuple<double,double,double> GenerateOneEvent();   
         boost::python::tuple GenerateOneEventPy(); 
-        //boost::python::numpy::ndarray GenerateEventsPy(int nev = 1);
+        boost::python::numpy::ndarray GenerateEventsPy(int nev = 1);
     private:
         // variables for overloading 
         
@@ -68,6 +70,8 @@ class DecayGenerator{
 
 BOOST_PYTHON_MODULE(libDecayGenerator)
 {
+    Py_Initialize() ;
+    boost::python::numpy::initialize() ;
     using namespace boost::python;
     class_<DecayGenerator>("DecayGenerator", init<optional<std::string, int, double, uint64_t> >())
       .def("setModel", &DecayGenerator::setModel)
@@ -87,7 +91,7 @@ BOOST_PYTHON_MODULE(libDecayGenerator)
       .def("rho_RHC",&DecayGenerator::rho_RHC)
       .def("rho_2vbb",&DecayGenerator::rho_2vbb)
       .def("GenerateOneEvent", &DecayGenerator::GenerateOneEventPy)
-      //.def("GenerateEvents", &DecayGenerator::GenerateEventsPy)
+      .def("GenerateEvents", &DecayGenerator::GenerateEventsPy)
     ;
 }
 #endif 

@@ -116,7 +116,7 @@ void DecayGenerator::GenerateEvents(int nevents,
     }    
     return;
 }
-//
+//  
 std::tuple<double,double,double> DecayGenerator::GenerateOneEvent(){
     while (true){  // XXX: what about adding a safeguard against infinite loops? 
         double t1 = unif(rng)*Q;
@@ -127,7 +127,7 @@ std::tuple<double,double,double> DecayGenerator::GenerateOneEvent(){
         if (model==std::string("MM") )        {  fval = rho_MM(t1, cth);      } 
         else if (model==std::string("RHC") )  {  fval = rho_RHC(t1, cth);     } 
         else if (model==std::string("2vbb") ) {  fval = rho_2vbb(t1,t2, cth); }
-        assert(( "rho value has wrong value, are you using a defined decay model? "&& fval > 0)) ; 
+        assert(( "rho value has wrong value, are you using a defined decay model? "&& fval >= 0.0)) ; 
         assert( ( "Rho value is larger than maximally allowed. You can use setMaximum() function, but this is strange" && fval < maxval ));
         if (check < fval ){ return std::make_tuple(t1,t2,cth);} 
     }
@@ -139,10 +139,20 @@ boost::python::tuple DecayGenerator::GenerateOneEventPy(){
     return boost::python::make_tuple(t1_,t2_, cth_);
 }
 //
-/*
+
 boost::python::numpy::ndarray DecayGenerator::GenerateEventsPy(int nev){
     namespace p = boost::python;
     namespace np = boost::python::numpy;
+    double events_c[nev][3];
 
-    return np::zeros(p::make_tuple(3,1), np::dtype::get_builtin<float>());
-}*/
+    for(int i=0; i < nev ; i++){
+        std::tie(events_c[i][0], events_c[i][1], events_c[i][2]) = GenerateOneEvent();
+        std::cout<<i<<"\t"<<events_c[i][0]<<"\t"<<events_c[i][1]<<"\t"<<events_c[i][2]<<std::endl;
+    }
+    np::ndarray events = np::from_data(events_c,
+                                    np::dtype::get_builtin<double>(), 
+                                    p::make_tuple(nev,3), // shape is N x 3
+                                    p::make_tuple(3*sizeof(double),1*sizeof(double)), //stride, each of new row is 3 x 1
+                                    p::object()); 
+    return events.copy();
+}
