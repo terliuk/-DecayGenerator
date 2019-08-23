@@ -27,7 +27,10 @@ class DecayGenerator{
         
         DecayGenerator(std::string s= "MM", 
                       int z= 56, double q = 2457.8, uint64_t seed = 5489u);
-        // 
+        ~DecayGenerator();
+        //
+        void setSeed(uint64_t) ;
+        //
         void initialize(std::string, int, double, uint64_t);
         void setModel(std::string);
         std::string getModel();
@@ -63,6 +66,7 @@ class DecayGenerator{
         std::tuple<double,double,double> GenerateOneEvent();   
         boost::python::tuple GenerateOneEventPy(); 
         boost::python::numpy::ndarray GenerateEventsPy(int nev = 1);
+        
     private:
         // variables for overloading 
         
@@ -109,6 +113,7 @@ BOOST_PYTHON_MODULE(libDecayGenerator)
                                                              boost::python::numpy::ndarray)>("rho_2vbb",&DecayGenerator::rho_2vbb)
       .def("GenerateOneEvent", &DecayGenerator::GenerateOneEventPy)
       .def("GenerateEvents", &DecayGenerator::GenerateEventsPy)
+      .def("setSeed", &DecayGenerator::setSeed)
     ;
 }
 #endif 

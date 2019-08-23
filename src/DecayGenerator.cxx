@@ -23,6 +23,12 @@ void DecayGenerator::initialize(std::string model_,
     rng = std::mt19937_64(seed);
     unif = std::uniform_real_distribution<double>(0.0, 1.0);
 }
+DecayGenerator::~DecayGenerator(){
+}
+//
+void DecayGenerator::setSeed(uint64_t seed){
+    rng.seed(seed);
+    }
 // Setter and getter for decay model
 void DecayGenerator::setModel(std::string m){    
     model = m;
