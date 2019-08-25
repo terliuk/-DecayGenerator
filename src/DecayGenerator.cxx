@@ -20,20 +20,26 @@ void DecayGenerator::initialize(std::string model_,
     setModel(model_);
     setZdaughter(zdaughter_);
     setQ(q_);
-    rng = std::mt19937_64(seed);
+    rng = std::mt19937_64();
+    setSeed(seed);
     unif = std::uniform_real_distribution<double>(0.0, 1.0);
 }
 DecayGenerator::~DecayGenerator(){
 }
 //
 void DecayGenerator::setSeed(uint64_t seed){
-    rng.seed(seed);
+    
+    if (seed==0){
+        cur_seed = 5489u;
+        rng.seed(cur_seed);}
+    else{ cur_seed = seed; 
+          rng.seed(cur_seed);}
     }
 // Setter and getter for decay model
 void DecayGenerator::setModel(std::string m){    
     model = m;
     maxval = findMax(m);
-    assert (("Cannot find decay model" ,maxval > 0.0) ) ;
+    assert (("Cannot find decay model" ,maxval >= 0.0) ) ;
 }
 std::string DecayGenerator::getModel(){return model; }
 // Summary information
@@ -43,6 +49,7 @@ void DecayGenerator::printModel(){
     std::cout<<"Daughter Z    : "<<Z_d<<std::endl; 
     std::cout<<"Q value       : "<<Q<<" keV"<<std::endl;
     std::cout<<"Max rho val   : "<<maxval<<std::endl;
+    std::cout<<"RNG seed      : "<<cur_seed<<std::endl;
     std::cout<<"============================= "<<std::endl;
 }
 // Setter and getter for daughter Z
@@ -57,7 +64,8 @@ double DecayGenerator::findMax(std::string mod){
     double mval = -1;
     if (mod==std::string("MM") ){mval = 1515.0; } 
     else if (mod==std::string("RHC") ){mval = 9950.0;} 
-    else if (mod==std::string("2vbb") ) {mval = 48600; }
+    else if (mod==std::string("2vbb") ) {mval = 48600.0; }
+    else if (mod==std::string("equal") ) {mval = 0.0; }
     else{mval = -1.0;}
     return mval ; } 
 void DecayGenerator::setMax(double mv_){ maxval = mv_;}
@@ -191,6 +199,9 @@ void DecayGenerator::GenerateEvents(int nevents,
 }
 //  
 std::tuple<double,double,double> DecayGenerator::GenerateOneEvent(){
+    if (model==std::string("equal")) { 
+        return std::make_tuple(0.5*Q, 0.5*Q,-1.0); // Shortcut for equal distribution of energy between electrons 
+        }
     while (true){  // XXX: what about adding a safeguard against infinite loops? 
         double t1 = unif(rng)*Q;
         double t2 = (model == std::string("2vbb") ) ? unif(rng)*Q : t2 = Q - t1;
@@ -235,4 +246,45 @@ boost::python::numpy::ndarray DecayGenerator::GenerateEventsPy(int nev){
                                     p::make_tuple(3*sizeof(double),1*sizeof(double)), //stride, each of new row is 3 x 1
                                     p::object()).copy(); 
     return events.copy();
+}
+
+
+/// 
+
+
+
+BOOST_PYTHON_MODULE(libDecayGenerator)
+{
+    Py_Initialize() ;
+    boost::python::numpy::initialize() ;
+    using namespace boost::python;
+    class_<DecayGenerator>("DecayGenerator", init<optional<std::string, int, double, uint64_t> >())
+      .def("setModel", &DecayGenerator::setModel)
+      .def("getModel", &DecayGenerator::getModel)
+      .def("printModel", &DecayGenerator::printModel)
+      .def("setZdaughter",  &DecayGenerator::setZdaughter)
+      .def("getZdaughter",  &DecayGenerator::getZdaughter)
+      .def("setQ",  &DecayGenerator::setQ)
+      .def("getQ",  &DecayGenerator::getQ)
+      .def("setMax",  &DecayGenerator::setMax)
+      .def("getMax",  &DecayGenerator::getMax)
+      .def("findMax",  &DecayGenerator::findMax)
+      .def("p", &DecayGenerator::p)
+      .def("beta", &DecayGenerator::beta)
+      .def<double (DecayGenerator::*)(double)>("F",&DecayGenerator::F)
+      .def<double (DecayGenerator::*)(double,int)>("F",&DecayGenerator::F)
+      .def<double (DecayGenerator::*)(double,double)>("rho_MM",&DecayGenerator::rho_MM)
+      .def<boost::python::numpy::ndarray (DecayGenerator::*)(boost::python::numpy::ndarray,
+                                                             boost::python::numpy::ndarray)>("rho_MM",&DecayGenerator::rho_MM)
+      .def<double (DecayGenerator::*)(double,double)>("rho_RHC",&DecayGenerator::rho_RHC)
+      .def<boost::python::numpy::ndarray (DecayGenerator::*)(boost::python::numpy::ndarray,
+                                                             boost::python::numpy::ndarray)>("rho_RHC",&DecayGenerator::rho_RHC)
+      .def<double (DecayGenerator::*)(double,double,double)>("rho_2vbb",&DecayGenerator::rho_2vbb)
+      .def<boost::python::numpy::ndarray (DecayGenerator::*)(boost::python::numpy::ndarray,
+                                                             boost::python::numpy::ndarray,
+                                                             boost::python::numpy::ndarray)>("rho_2vbb",&DecayGenerator::rho_2vbb)
+      .def("GenerateOneEvent", &DecayGenerator::GenerateOneEventPy)
+      .def("GenerateEvents", &DecayGenerator::GenerateEventsPy)
+      .def("setSeed", &DecayGenerator::setSeed)
+    ;
 }
