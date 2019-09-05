@@ -68,3 +68,7 @@ plt.xlabel(r"$\cos(\theta_{12})$", fontsize=18)
 plt.ylabel(r"Frequency [ a.u. ]", fontsize=18)
 plt.show()
 ```
+
+It should produce a figure similar to this one: 
+![](https://raw.githubusercontent.com/terliuk/DecayGenerator/master/cos_theta12.png)
+## Usage in C++
