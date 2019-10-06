@@ -1,4 +1,5 @@
 #include "DecayGenerator.h"
+#include <sys/time.h>
 
 namespace p = boost::python;
 namespace np = boost::python::numpy;
@@ -30,8 +31,13 @@ DecayGenerator::~DecayGenerator(){
 void DecayGenerator::setSeed(uint64_t seed){
     
     if (seed==0){
-        cur_seed = 5489u;
-        rng.seed(cur_seed);}
+           
+        //cur_seed = 5489u;
+        struct timeval hTimeValue;
+        gettimeofday(&hTimeValue, NULL);
+        cur_seed = hTimeValue.tv_usec;
+        rng.seed(cur_seed);
+    }
     else{ cur_seed = seed; 
           rng.seed(cur_seed);}
     }
