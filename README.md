@@ -1,6 +1,8 @@
 # DecayGenerator
 A small project to generate double beta decays (with and without neutrinos). Return energies and angles between electrons in the decay. 
 
+
+
 ## Installation 
 The following projects are required for successfull compilation:
 * GSL (GNU Scientific Library)
@@ -15,12 +17,13 @@ In order to compile it do:
 ~~~~
 > cmake 
 > make 
+
 ~~~~
 This sohuld produce "lib" folder with libDecayGenerator.so
 
 ## Usage in python 
 
-In order to use the package in Python just add the folder with `libDecayGenerator.so` to your sys path as : 
+In order to use the package in Python just add the folder with `libDecayGenerator.so` to your sys path   as : 
 ```python
 import sys
 sys.path.append("/path/to/the/decayer/lib/")
