@@ -47,6 +47,13 @@ void DecayGenerator::setModel(std::string m){
     maxval = findMax(m);
     assert (("Cannot find decay model" ,maxval >= 0.0) ) ;
 }
+
+void DecayGenerator::setModelPy(char* m){  
+    setModel(std::string(m));  
+    //model = std::string(m);
+    //maxval = findMax(model);
+    //assert (("Cannot find decay model" ,maxval >= 0.0) ) ;
+}
 std::string DecayGenerator::getModel(){return model; }
 // Summary information
 void DecayGenerator::printModel(){
@@ -264,8 +271,8 @@ BOOST_PYTHON_MODULE(libDecayGenerator)
     Py_Initialize() ;
     boost::python::numpy::initialize() ;
     using namespace boost::python;
-    class_<DecayGenerator>("DecayGenerator", init<optional<std::string, int, double, uint64_t> >())
-      .def("setModel", &DecayGenerator::setModel)
+    class_<DecayGenerator>("DecayGenerator", init<optional<char*, int, double, uint64_t> >())
+      .def("setModel", &DecayGenerator::setModelPy)
       .def("getModel", &DecayGenerator::getModel)
       .def("printModel", &DecayGenerator::printModel)
       .def("setZdaughter",  &DecayGenerator::setZdaughter)

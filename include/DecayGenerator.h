@@ -33,6 +33,7 @@ class DecayGenerator{
         //
         void initialize(std::string, int, double, uint64_t);
         void setModel(std::string);
+        void setModelPy(char* );
         std::string getModel();
         void printModel(); 
         //
