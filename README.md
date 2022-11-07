@@ -26,6 +26,8 @@ This sohuld produce "lib" folder with libDecayGenerator.so
 In order to use the package in Python just add the folder with `libDecayGenerator.so` to your sys path   as : 
 ```python
 import sys
+import numpy as np
+import matplotlib.pyplot as plt
 sys.path.append("/path/to/the/decayer/lib/")
 
 from libDecayGenerator import DecayGenerator
@@ -41,12 +43,12 @@ for m in ["2vbb", "MM", "RHC"]:
     print("Model : ", m)
     events_left = nevents
     events[m] = np.zeros((0,3))
-    gen.setModel(m)
+    dec.setModel(m)
     while events_left > 0:
         if events_left > max_ev_per_try: cur_nevents = max_ev_per_try
         else: cur_nevents = events_left
         events[m] = np.concatenate( (events[m],  
-                                     gen.GenerateEvents(cur_nevents) )) 
+                                     dec.GenerateEvents(cur_nevents) )) 
         ### The generation function returns 3xN array with values of [T1, T2, costheta]
         
         events_left = events_left - cur_nevents
